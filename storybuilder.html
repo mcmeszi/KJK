@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StoryBuilder</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --bg-elevated: #172554;
+      --panel: #1e293b;
+      --panel-border: #24324f;
+      --accent: #fee600;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --danger: #f87171;
+      --success: #4ade80;
+      font-family: "Segoe UI", "SF Pro Text", system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 1px solid var(--panel-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+
+    header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    header .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s ease, border 0.2s ease, transform 0.1s;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #000;
+      border-color: #00000033;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: rgba(148, 163, 184, 0.2);
+    }
+
+    button.primary:hover {
+      background: #ffe033;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    main.layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(240px, 320px) minmax(280px, 420px) 1fr;
+      gap: 1rem;
+      padding: 1rem;
+      box-sizing: border-box;
+      height: calc(100vh - 72px);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 1rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 0;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .scenes-panel {
+      overflow: hidden;
+    }
+
+    .scene-search {
+      display: flex;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .scene-search input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: inherit;
+      flex: 1;
+    }
+
+    .scene-list {
+      overflow-y: auto;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .scene-item {
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 0.65rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      transition: border 0.2s ease, background 0.2s ease;
+    }
+
+    .scene-item:hover {
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .scene-item.active {
+      border-color: var(--accent);
+      background: rgba(254, 230, 0, 0.14);
+    }
+
+    .scene-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+
+    .chip {
+      background: rgba(254, 230, 0, 0.1);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+
+    .scene-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .editor-panel form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    label.field span.label-text {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    input.text, textarea.text, select.text {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 10px;
+      padding: 0.55rem 0.75rem;
+      color: inherit;
+      transition: border 0.2s ease;
+    }
+
+    input.text:focus, textarea.text:focus, select.text:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea.text {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .choices-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .choice-row {
+      background: rgba(148, 163, 184, 0.08);
+      border-radius: 10px;
+      padding: 0.5rem;
+      display: grid;
+      grid-template-columns: 1fr minmax(140px, 200px) auto;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .choice-row.broken {
+      border: 1px solid rgba(248, 113, 113, 0.6);
+    }
+
+    .choice-row button.icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .info-bar {
+      background: rgba(148, 163, 184, 0.06);
+      border-radius: 12px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      display: flex;
+      gap: 1rem;
+      color: var(--muted);
+    }
+
+    .label-warning {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: minmax(180px, 240px) minmax(260px, 1fr) minmax(120px, 220px);
+      gap: 0.75rem;
+      min-height: 0;
+    }
+
+    .player-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .player-content {
+      flex: 1;
+      background: rgba(148, 163, 184, 0.08);
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .player-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--panel-border);
+    }
+
+    canvas#mapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    canvas#mapCanvas.dragging {
+      cursor: grabbing;
+    }
+
+    .diagnostics-panel {
+      overflow-y: auto;
+    }
+
+    .diag-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .diag-item {
+      background: rgba(148, 163, 184, 0.08);
+      border-radius: 10px;
+      padding: 0.6rem;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+    }
+
+    .diag-item.bad {
+      border: 1px solid rgba(248, 113, 113, 0.6);
+      color: var(--danger);
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+
+    .toast {
+      background: rgba(30, 41, 59, 0.95);
+      color: var(--text);
+      padding: 0.6rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      min-width: 220px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.4);
+      font-size: 0.85rem;
+    }
+
+    .toast.success {
+      border-color: rgba(74, 222, 128, 0.6);
+    }
+
+    .toast.error {
+      border-color: rgba(248, 113, 113, 0.7);
+    }
+
+    @media (max-width: 1200px) {
+      main.layout {
+        grid-template-columns: minmax(220px, 280px) minmax(260px, 1fr);
+        grid-template-areas:
+          "list editor"
+          "list workspace";
+        grid-auto-rows: auto;
+      }
+    }
+
+    @media (max-width: 980px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      main.layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        height: auto;
+      }
+
+      .workspace {
+        grid-template-rows: repeat(3, auto);
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.3.2/docx.umd.min.js" integrity="sha512-P9zXWuSYjP88lS62ArExNJXuPxqFDc8mBEzXdoSlyntX6Aawpg12hHV/6pCr0aVZDqRjrWB+9qs/vxjwoMv+cQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+  <header>
+    <h1 aria-label="StoryBuilder történet-építő alkalmazás">🧩 StoryBuilder</h1>
+    <div class="actions" role="toolbar" aria-label="Fő műveletek">
+      <button id="newSceneBtn" class="primary" type="button">+ Új jelenet</button>
+      <button id="setStartBtn" type="button">Kezdő jelenet kijelölése</button>
+      <button id="playToggleBtn" type="button">Lejátszás mód</button>
+      <button id="exportJsonBtn" type="button">Export JSON</button>
+      <button id="exportTxtBtn" type="button">Export TXT</button>
+      <button id="exportDocxBtn" type="button">Export DOCX</button>
+      <button id="importJsonBtn" type="button">Import JSON</button>
+      <button id="clearAllBtn" type="button">Minden törlése</button>
+      <input id="importFileInput" type="file" accept="application/json" style="display:none" />
+    </div>
+  </header>
+
+  <main class="layout" role="main">
+    <section class="panel scenes-panel" aria-label="Jelenetek listája">
+      <h2>Jelenetek</h2>
+      <label class="scene-search" aria-label="Keresés">
+        🔍
+        <input id="sceneSearch" type="search" placeholder="Keresés cím, címke vagy szöveg alapján" aria-label="Kereső mező" />
+      </label>
+      <ul id="sceneList" class="scene-list" role="listbox" aria-label="Jelenetek"></ul>
+    </section>
+
+    <section class="panel editor-panel" aria-label="Jelenet szerkesztő">
+      <h2>Szerkesztő</h2>
+      <div class="info-bar" aria-live="polite">
+        <span>Bejövő: <strong id="incomingCount">0</strong></span>
+        <span>Kimenő: <strong id="outgoingCount">0</strong></span>
+        <span>Utolsó mód.: <strong id="updatedAtInfo">-</strong></span>
+      </div>
+      <form id="sceneForm" autocomplete="off">
+        <label class="field">
+          <span class="label-text">Cím</span>
+          <input type="text" id="sceneTitle" class="text" placeholder="Jelenet címe" />
+        </label>
+        <label class="field">
+          <span class="label-text">Címke <span id="labelRequired" class="label-warning" hidden>CÍMKE KÖTELEZŐ</span></span>
+          <input type="text" id="sceneLabel" class="text" placeholder="PL. PROLÓGUS" aria-required="true" />
+        </label>
+        <label class="field">
+          <span class="label-text">Szöveg</span>
+          <textarea id="sceneText" class="text" placeholder="Írd ide a jelenet tartalmát"></textarea>
+        </label>
+        <section class="field">
+          <span class="label-text">Elágazások</span>
+          <div id="choicesContainer" class="choices-container" aria-live="polite"></div>
+          <button id="addChoiceBtn" type="button">+ Új válasz</button>
+        </section>
+        <div class="editor-actions" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button id="saveSceneBtn" type="submit" class="primary">Mentés</button>
+          <button id="deleteSceneBtn" type="button">Jelenet törlése</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="workspace">
+      <section class="panel player-panel" aria-label="Lejátszó">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+          <h2>Lejátszás</h2>
+          <button id="playerRestartBtn" type="button">Újrakezdés</button>
+        </div>
+        <div class="player-content" id="playerContent" tabindex="0" aria-live="polite">
+          <div id="playerTitle" style="font-weight:600; font-size:1.05rem;"></div>
+          <div id="playerLabel" class="chip" style="align-self:flex-start;" hidden></div>
+          <div id="playerText" style="white-space:pre-wrap; font-size:0.95rem; line-height:1.5;"></div>
+          <div class="player-choices" id="playerChoices"></div>
+        </div>
+      </section>
+
+      <section class="canvas-wrapper" aria-label="Térkép">
+        <canvas id="mapCanvas" width="1200" height="800" role="img" aria-label="Jelenetek gráfja"></canvas>
+      </section>
+
+      <section class="panel diagnostics-panel" aria-label="Diagnosztika">
+        <h2>Diagnosztika</h2>
+        <ul id="diagnosticsList" class="diag-list"></ul>
+      </section>
+    </section>
+  </main>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    const STORAGE_KEY = "storybuilder-project";
+    const DEFAULT_SCENE_SIZE = { w: 240, h: 140 };
+
+    let project = loadProject();
+    let selectedSceneId = null;
+    let playingSceneId = null;
+
+    const elements = {
+      sceneList: document.getElementById("sceneList"),
+      sceneSearch: document.getElementById("sceneSearch"),
+      sceneForm: document.getElementById("sceneForm"),
+      sceneTitle: document.getElementById("sceneTitle"),
+      sceneLabel: document.getElementById("sceneLabel"),
+      sceneText: document.getElementById("sceneText"),
+      labelRequired: document.getElementById("labelRequired"),
+      choicesContainer: document.getElementById("choicesContainer"),
+      addChoiceBtn: document.getElementById("addChoiceBtn"),
+      saveSceneBtn: document.getElementById("saveSceneBtn"),
+      deleteSceneBtn: document.getElementById("deleteSceneBtn"),
+      incomingCount: document.getElementById("incomingCount"),
+      outgoingCount: document.getElementById("outgoingCount"),
+      updatedAtInfo: document.getElementById("updatedAtInfo"),
+      newSceneBtn: document.getElementById("newSceneBtn"),
+      setStartBtn: document.getElementById("setStartBtn"),
+      playToggleBtn: document.getElementById("playToggleBtn"),
+      exportJsonBtn: document.getElementById("exportJsonBtn"),
+      exportTxtBtn: document.getElementById("exportTxtBtn"),
+      exportDocxBtn: document.getElementById("exportDocxBtn"),
+      importJsonBtn: document.getElementById("importJsonBtn"),
+      importFileInput: document.getElementById("importFileInput"),
+      clearAllBtn: document.getElementById("clearAllBtn"),
+      playerTitle: document.getElementById("playerTitle"),
+      playerLabel: document.getElementById("playerLabel"),
+      playerText: document.getElementById("playerText"),
+      playerChoices: document.getElementById("playerChoices"),
+      playerRestartBtn: document.getElementById("playerRestartBtn"),
+      playerContent: document.getElementById("playerContent"),
+      diagnosticsList: document.getElementById("diagnosticsList"),
+      toastContainer: document.getElementById("toastContainer"),
+      mapCanvas: document.getElementById("mapCanvas"),
+    };
+
+    const canvasState = {
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      isPanning: false,
+      panStart: null,
+      draggingNodeId: null,
+      dragStart: null,
+      canvasRect: null,
+    };
+
+    const ctx = elements.mapCanvas.getContext("2d");
+
+    function loadProject() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return { startId: null, scenes: {} };
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object" || !parsed.scenes) {
+          return { startId: null, scenes: {} };
+        }
+        Object.values(parsed.scenes).forEach((scene) => {
+          if (!scene.createdAt) scene.createdAt = Date.now();
+          scene.w = scene.w || DEFAULT_SCENE_SIZE.w;
+          scene.h = scene.h || DEFAULT_SCENE_SIZE.h;
+        });
+        return parsed;
+      } catch (error) {
+        console.error("Project load failed", error);
+        return { startId: null, scenes: {} };
+      }
+    }
+
+    function saveProject() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+      } catch (error) {
+        console.error("Project save failed", error);
+      }
+    }
+
+    function createScene(partial = {}) {
+      const id = crypto.randomUUID();
+      const createdAt = Date.now();
+      const { x, y } = autoPositionScene(Object.keys(project.scenes).length);
+      const scene = {
+        id,
+        title: "",
+        label: "",
+        text: "",
+        choices: [],
+        x,
+        y,
+        w: DEFAULT_SCENE_SIZE.w,
+        h: DEFAULT_SCENE_SIZE.h,
+        createdAt,
+        ...partial,
+      };
+      project.scenes[id] = scene;
+      if (!project.startId) {
+        project.startId = id;
+        toast("Új kezdő jelenet kijelölve", "success");
+      }
+      saveProject();
+      return scene;
+    }
+
+    function autoPositionScene(index) {
+      const count = index + 1;
+      const radius = 180 + count * 8;
+      const angle = count * (Math.PI * 2 / Math.max(6, count));
+      return {
+        x: radius * Math.cos(angle),
+        y: radius * Math.sin(angle),
+      };
+    }
+
+    function toast(message, type = "info") {
+      const node = document.createElement("div");
+      node.className = `toast ${type}`;
+      node.textContent = message;
+      elements.toastContainer.appendChild(node);
+      setTimeout(() => node.remove(), 3200);
+    }
+
+    function getScenesArray() {
+      return Object.values(project.scenes).sort((a, b) => a.createdAt - b.createdAt);
+    }
+
+    function getOrderedScenesForExport() {
+      const scenes = getScenesArray();
+      const numeric = scenes.length > 0 && scenes.every((scene) => /^\s*\d+/.test(scene.label || ""));
+      if (numeric) {
+        return [...scenes].sort((a, b) => {
+          const av = parseInt((a.label || "").match(/\d+/)?.[0] ?? "0", 10);
+          const bv = parseInt((b.label || "").match(/\d+/)?.[0] ?? "0", 10);
+          return av - bv;
+        });
+      }
+      return scenes;
+    }
+
+    function selectScene(id) {
+      if (!id || !project.scenes[id]) {
+        selectedSceneId = null;
+        renderEditor();
+        renderSceneList();
+        return;
+      }
+      selectedSceneId = id;
+      renderEditor();
+      renderSceneList();
+    }
+
+    function sceneStats(sceneId) {
+      const scenes = project.scenes;
+      const incoming = [];
+      const outgoing = scenes[sceneId]?.choices ?? [];
+      Object.values(scenes).forEach((scene) => {
+        scene.choices.forEach((choice, idx) => {
+          if (choice.targetId === sceneId) {
+            incoming.push({ from: scene.id, index: idx });
+          }
+        });
+      });
+      return { incoming, outgoing };
+    }
+
+    function renderSceneList() {
+      const filter = elements.sceneSearch.value.trim().toLowerCase();
+      const scenes = getScenesArray();
+      elements.sceneList.innerHTML = "";
+      scenes
+        .filter((scene) => {
+          if (!filter) return true;
+          return [scene.label, scene.title, scene.text].some((value) =>
+            (value || "").toLowerCase().includes(filter)
+          );
+        })
+        .forEach((scene) => {
+          const li = document.createElement("li");
+          li.className = "scene-item";
+          li.role = "option";
+          li.tabIndex = 0;
+          if (scene.id === selectedSceneId) {
+            li.classList.add("active");
+          }
+          const title = document.createElement("div");
+          title.className = "scene-title";
+          const labelChip = document.createElement("span");
+          labelChip.className = "chip";
+          labelChip.textContent = scene.label || "NINCS CÍMKE";
+          const heading = document.createElement("span");
+          heading.textContent = scene.title || "(Névtelen jelenet)";
+          title.append(heading, labelChip);
+
+          const meta = document.createElement("div");
+          meta.className = "scene-meta";
+          const stats = sceneStats(scene.id);
+          const incoming = stats.incoming.length;
+          const outgoing = stats.outgoing.length;
+          const start = scene.id === project.startId ? " • Kezdő" : "";
+          meta.textContent = `Bejövő: ${incoming}  Kimenő: ${outgoing}${start}`;
+
+          li.append(title, meta);
+          li.addEventListener("click", () => selectScene(scene.id));
+          li.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              selectScene(scene.id);
+            }
+          });
+          elements.sceneList.appendChild(li);
+        });
+    }
+
+    function renderEditor() {
+      const scene = project.scenes[selectedSceneId];
+      if (!scene) {
+        elements.sceneForm.reset();
+        elements.choicesContainer.innerHTML = "";
+        elements.incomingCount.textContent = "0";
+        elements.outgoingCount.textContent = "0";
+        elements.updatedAtInfo.textContent = "-";
+        elements.labelRequired.hidden = true;
+        elements.sceneForm.querySelectorAll("input, textarea, button, select").forEach((el) => {
+          el.disabled = true;
+        });
+        return;
+      }
+      elements.sceneForm.querySelectorAll("input, textarea, button, select").forEach((el) => {
+        el.disabled = false;
+      });
+      elements.sceneTitle.value = scene.title;
+      elements.sceneLabel.value = scene.label;
+      elements.sceneText.value = scene.text;
+      elements.labelRequired.hidden = !!scene.label.trim();
+
+      const { incoming, outgoing } = sceneStats(scene.id);
+      elements.incomingCount.textContent = incoming.length;
+      elements.outgoingCount.textContent = outgoing.length;
+      const updated = new Date(scene.updatedAt || scene.createdAt).toLocaleString();
+      elements.updatedAtInfo.textContent = updated;
+
+      renderChoices(scene);
+    }
+
+    function renderChoices(scene) {
+      elements.choicesContainer.innerHTML = "";
+      scene.choices.forEach((choice, index) => {
+        const row = document.createElement("div");
+        row.className = "choice-row";
+        const broken = choice.targetId && !project.scenes[choice.targetId];
+        if (broken) row.classList.add("broken");
+
+        const textInput = document.createElement("input");
+        textInput.type = "text";
+        textInput.value = choice.text;
+        textInput.placeholder = "Gomb felirata";
+        textInput.className = "text";
+        textInput.addEventListener("input", (event) => {
+          choice.text = event.target.value;
+          scheduleSave();
+          renderCanvas();
+        });
+
+        const select = document.createElement("select");
+        select.className = "text";
+        select.innerHTML = "";
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "- nincs cél -";
+        select.appendChild(emptyOption);
+
+        getScenesArray().forEach((s) => {
+          const option = document.createElement("option");
+          option.value = s.id;
+          option.textContent = `${s.label || "NINCS"} — ${s.title || "(Névtelen)"}`;
+          select.appendChild(option);
+        });
+
+        const createOption = document.createElement("option");
+        createOption.value = "__create__";
+        createOption.textContent = "+ Új jelenet";
+        select.appendChild(createOption);
+
+        select.value = choice.targetId || "";
+        select.addEventListener("change", (event) => {
+          const value = event.target.value;
+          if (value === "__create__") {
+            const newScene = createScene();
+            toast("Új jelenet létrehozva", "success");
+            choice.targetId = newScene.id;
+            selectScene(newScene.id);
+          } else {
+            choice.targetId = value || null;
+          }
+          scheduleSave();
+          renderEditor();
+          renderSceneList();
+          renderCanvas();
+          renderDiagnostics();
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "icon";
+        removeBtn.setAttribute("aria-label", "Válasz törlése");
+        removeBtn.textContent = "✕";
+        removeBtn.addEventListener("click", () => {
+          scene.choices.splice(index, 1);
+          scheduleSave();
+          renderEditor();
+          renderSceneList();
+          renderCanvas();
+          renderDiagnostics();
+        });
+
+        row.append(textInput, select, removeBtn);
+        elements.choicesContainer.appendChild(row);
+      });
+    }
+
+    function scheduleSave() {
+      saveProject();
+    }
+
+    elements.sceneForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const scene = project.scenes[selectedSceneId];
+      if (!scene) return;
+      scene.title = elements.sceneTitle.value.trim();
+      scene.label = elements.sceneLabel.value.trim();
+      scene.text = elements.sceneText.value;
+      scene.updatedAt = Date.now();
+      elements.labelRequired.hidden = !!scene.label;
+      scheduleSave();
+      renderSceneList();
+      renderCanvas();
+      renderDiagnostics();
+      toast("Jelenet mentve", "success");
+    });
+
+    elements.sceneLabel.addEventListener("input", () => {
+      elements.labelRequired.hidden = !!elements.sceneLabel.value.trim();
+    });
+
+    elements.addChoiceBtn.addEventListener("click", () => {
+      const scene = project.scenes[selectedSceneId];
+      if (!scene) return;
+      scene.choices.push({ text: "", targetId: null });
+      scheduleSave();
+      renderEditor();
+      renderCanvas();
+    });
+
+    elements.deleteSceneBtn.addEventListener("click", () => {
+      const scene = project.scenes[selectedSceneId];
+      if (!scene) return;
+      if (!confirm("Biztosan törlöd a jelenetet?")) return;
+      delete project.scenes[scene.id];
+      Object.values(project.scenes).forEach((s) => {
+        s.choices = s.choices.filter((choice) => choice.targetId !== scene.id);
+      });
+      if (project.startId === scene.id) {
+        project.startId = getScenesArray()[0]?.id || null;
+      }
+      selectedSceneId = getScenesArray()[0]?.id || null;
+      saveProject();
+      renderSceneList();
+      renderEditor();
+      renderCanvas();
+      renderDiagnostics();
+      toast("Jelenet törölve", "success");
+    });
+
+    elements.sceneSearch.addEventListener("input", renderSceneList);
+
+    elements.newSceneBtn.addEventListener("click", () => {
+      const scene = createScene();
+      selectScene(scene.id);
+      renderSceneList();
+      renderCanvas();
+      renderDiagnostics();
+    });
+
+    elements.setStartBtn.addEventListener("click", () => {
+      if (!selectedSceneId) {
+        toast("Válassz ki egy jelenetet!", "error");
+        return;
+      }
+      project.startId = selectedSceneId;
+      saveProject();
+      renderSceneList();
+      renderCanvas();
+      renderDiagnostics();
+      toast("Kezdő jelenet beállítva", "success");
+    });
+
+    elements.playToggleBtn.addEventListener("click", () => {
+      if (!project.startId) {
+        toast("Nincs kezdő jelenet!", "error");
+        return;
+      }
+      startPlaying();
+    });
+
+    elements.playerRestartBtn.addEventListener("click", () => {
+      startPlaying();
+    });
+
+    function startPlaying() {
+      playingSceneId = project.startId;
+      renderPlayer();
+      elements.playerContent.focus();
+    }
+
+    function renderPlayer() {
+      const scene = project.scenes[playingSceneId];
+      elements.playerChoices.innerHTML = "";
+      if (!scene) {
+        elements.playerTitle.textContent = "Nincs jelenet";
+        elements.playerLabel.hidden = true;
+        elements.playerText.textContent = "";
+        return;
+      }
+      elements.playerTitle.textContent = scene.title || "(Névtelen jelenet)";
+      if (scene.label) {
+        elements.playerLabel.hidden = false;
+        elements.playerLabel.textContent = scene.label;
+      } else {
+        elements.playerLabel.hidden = true;
+      }
+      elements.playerText.textContent = scene.text || "";
+      if (scene.choices.length === 0) {
+        const endBtn = document.createElement("button");
+        endBtn.textContent = "Vissza a kezdőre";
+        endBtn.addEventListener("click", startPlaying);
+        elements.playerChoices.appendChild(endBtn);
+        return;
+      }
+      scene.choices.forEach((choice) => {
+        const btn = document.createElement("button");
+        btn.textContent = choice.text || "(Üres választás)";
+        btn.disabled = !choice.targetId || !project.scenes[choice.targetId];
+        btn.addEventListener("click", () => {
+          playingSceneId = choice.targetId;
+          renderPlayer();
+        });
+        elements.playerChoices.appendChild(btn);
+      });
+    }
+
+    elements.exportJsonBtn.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+      downloadBlob(blob, "story.json");
+      toast("JSON export kész", "success");
+    });
+
+    elements.exportTxtBtn.addEventListener("click", () => {
+      const lines = [];
+      const scenes = getOrderedScenesForExport();
+      scenes.forEach((scene, index) => {
+        const order = index + 1;
+        const label = scene.label || "NINCS CÍMKE";
+        const title = scene.title || "(Névtelen jelenet)";
+        lines.push(`${order}. [${label}] — ${title}`);
+        lines.push(scene.text || "");
+        lines.push("");
+      });
+      const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+      downloadBlob(blob, "story.txt");
+      toast("TXT export kész", "success");
+    });
+
+    elements.exportDocxBtn.addEventListener("click", async () => {
+      const scenes = getOrderedScenesForExport();
+      if (scenes.length === 0) {
+        toast("Nincs jelenet az exporthoz", "error");
+        return;
+      }
+      if (!window.docx) {
+        toast("DOCX könyvtár nem elérhető", "error");
+        return;
+      }
+      const { Document, Packer, Paragraph, TextRun } = window.docx;
+      const doc = new Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                margin: { top: 720, right: 720, bottom: 720, left: 720 },
+              },
+            },
+            children: scenes.flatMap((scene, index) => {
+              const order = index + 1;
+              const label = scene.label || "NINCS CÍMKE";
+              const title = scene.title || "(Névtelen jelenet)";
+              const header = new Paragraph({
+                spacing: { after: 120 },
+                children: [
+                  new TextRun({
+                    text: `${order}. [${label}] — ${title}`,
+                    bold: true,
+                    size: 36,
+                  }),
+                ],
+              });
+              const text = (scene.text || "").split(/\n/g).map(
+                (line) =>
+                  new Paragraph({
+                    spacing: { line: 360 },
+                    children: [
+                      new TextRun({
+                        text: line,
+                        size: 24,
+                      }),
+                    ],
+                  })
+              );
+              return [header, ...text, new Paragraph({ spacing: { after: 200 } })];
+            }),
+          },
+        ],
+      });
+
+      try {
+        const blob = await Packer.toBlob(doc);
+        downloadBlob(blob, "story.docx");
+        toast("DOCX export kész", "success");
+      } catch (error) {
+        console.error(error);
+        toast("DOCX export hiba", "error");
+      }
+    });
+
+    elements.importJsonBtn.addEventListener("click", () => {
+      elements.importFileInput.click();
+    });
+
+    elements.importFileInput.addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (!imported || !imported.scenes) throw new Error("Érvénytelen formátum");
+          project = imported;
+          Object.values(project.scenes).forEach((scene) => {
+            scene.w = scene.w || DEFAULT_SCENE_SIZE.w;
+            scene.h = scene.h || DEFAULT_SCENE_SIZE.h;
+            scene.createdAt = scene.createdAt || Date.now();
+          });
+          saveProject();
+          selectedSceneId = getScenesArray()[0]?.id || null;
+          renderAll();
+          toast("Projekt importálva", "success");
+        } catch (error) {
+          console.error(error);
+          toast("Import hiba", "error");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    });
+
+    elements.clearAllBtn.addEventListener("click", () => {
+      if (!confirm("Biztosan törlöd az összes adatot?")) return;
+      project = { startId: null, scenes: {} };
+      selectedSceneId = null;
+      saveProject();
+      renderAll();
+      toast("Minden törölve", "success");
+    });
+
+    function downloadBlob(blob, filename) {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }, 100);
+    }
+
+    function renderDiagnostics() {
+      const diagnostics = [];
+      const scenes = project.scenes;
+      const sceneIds = Object.keys(scenes);
+      const incomingMap = new Map(sceneIds.map((id) => [id, 0]));
+      const brokenLinks = [];
+
+      sceneIds.forEach((id) => {
+        const scene = scenes[id];
+        scene.choices.forEach((choice) => {
+          if (!choice.targetId || !scenes[choice.targetId]) {
+            if (choice.targetId) {
+              brokenLinks.push({ from: id, text: choice.text });
+            }
+            return;
+          }
+          incomingMap.set(choice.targetId, (incomingMap.get(choice.targetId) || 0) + 1);
+        });
+      });
+
+      incomingMap.forEach((count, id) => {
+        if (count === 0) {
+          diagnostics.push({
+            type: "orphan",
+            label: "Árva csomópont",
+            message: `${scenes[id].label || "NINCS CÍMKE"} — ${scenes[id].title || "(Névtelen)"}`,
+          });
+        }
+      });
+
+      const unreachable = findUnreachableScenes();
+      unreachable.forEach((id) => {
+        diagnostics.push({
+          type: "unreachable",
+          label: "Nem elérhető",
+          message: `${scenes[id].label || "NINCS CÍMKE"} — ${scenes[id].title || "(Névtelen)"}`,
+        });
+      });
+
+      brokenLinks.forEach((link) => {
+        const scene = scenes[link.from];
+        diagnostics.push({
+          type: "broken",
+          label: "Törött link",
+          message: `${scene.label || "NINCS"} — ${scene.title || "(Névtelen)"}: "${link.text || "(Üres)"}"`,
+        });
+      });
+
+      elements.diagnosticsList.innerHTML = "";
+      if (diagnostics.length === 0) {
+        const item = document.createElement("li");
+        item.className = "diag-item";
+        item.style.color = varSuccess();
+        item.textContent = "Nincs hiba";
+        elements.diagnosticsList.appendChild(item);
+        return;
+      }
+      diagnostics.forEach((diag) => {
+        const item = document.createElement("li");
+        item.className = "diag-item bad";
+        item.innerHTML = `<span>${diag.label}</span><span>${diag.message}</span>`;
+        elements.diagnosticsList.appendChild(item);
+      });
+    }
+
+    function varSuccess() {
+      return getComputedStyle(document.documentElement).getPropertyValue("--success");
+    }
+
+    function findUnreachableScenes() {
+      const scenes = project.scenes;
+      const visited = new Set();
+      const startId = project.startId;
+      if (!startId || !scenes[startId]) {
+        return Object.keys(scenes);
+      }
+      const queue = [startId];
+      while (queue.length) {
+        const id = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const scene = scenes[id];
+        scene.choices.forEach((choice) => {
+          if (choice.targetId && scenes[choice.targetId]) {
+            queue.push(choice.targetId);
+          }
+        });
+      }
+      return Object.keys(scenes).filter((id) => !visited.has(id));
+    }
+
+    function renderCanvas() {
+      resizeCanvas();
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
+      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      ctx.translate(canvasState.offsetX, canvasState.offsetY);
+      ctx.scale(canvasState.scale, canvasState.scale);
+
+      const scenes = getScenesArray();
+
+      scenes.forEach((scene) => {
+        scene.choices.forEach((choice) => {
+          if (!choice.targetId) return;
+          const target = project.scenes[choice.targetId];
+          const broken = !target;
+          const fromCenter = { x: scene.x + scene.w / 2, y: scene.y + scene.h / 2 };
+          const toCenter = target
+            ? { x: target.x + target.w / 2, y: target.y + target.h / 2 }
+            : { x: scene.x + scene.w / 2 + 80, y: scene.y + scene.h / 2 };
+          drawArrow(fromCenter, toCenter, choice.text, broken);
+        });
+      });
+
+      scenes.forEach((scene) => {
+        drawSceneNode(scene);
+      });
+
+      ctx.restore();
+    }
+
+    function resizeCanvas() {
+      const rect = elements.mapCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      if (elements.mapCanvas.width !== rect.width * dpr || elements.mapCanvas.height !== rect.height * dpr) {
+        elements.mapCanvas.width = rect.width * dpr;
+        elements.mapCanvas.height = rect.height * dpr;
+      }
+      canvasState.canvasRect = rect;
+    }
+
+    function drawArrow(from, to, label, broken) {
+      const headLength = 14;
+      const angle = Math.atan2(to.y - from.y, to.x - from.x);
+      const start = edgePoint(from, angle + Math.PI, DEFAULT_SCENE_SIZE);
+      const end = edgePoint(to, angle, DEFAULT_SCENE_SIZE);
+
+      ctx.save();
+      ctx.strokeStyle = broken ? "#f87171" : "#e2e8f0";
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - headLength * Math.cos(angle - Math.PI / 6), end.y - headLength * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - headLength * Math.cos(angle + Math.PI / 6), end.y - headLength * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      if (label) {
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        const padding = 6;
+        const text = label;
+        ctx.font = "12px 'Segoe UI', sans-serif";
+        const textWidth = ctx.measureText(text).width;
+        ctx.save();
+        ctx.translate(midX, midY);
+        ctx.rotate(angle);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.6)";
+        ctx.lineWidth = 1;
+        roundedRect(ctx, -textWidth / 2 - padding, -16 / 2 - padding / 2, textWidth + padding * 2, 16 + padding, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#e2e8f0";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    function edgePoint(center, angle, size) {
+      const { w, h } = size;
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      const halfW = w / 2;
+      const halfH = h / 2;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+      let scale = 0;
+      if (absDx > absDy) {
+        scale = halfW / absDx;
+      } else {
+        scale = halfH / absDy;
+      }
+      return {
+        x: center.x + dx * scale,
+        y: center.y + dy * scale,
+      };
+    }
+
+    function drawSceneNode(scene) {
+      ctx.save();
+      const x = scene.x;
+      const y = scene.y;
+      const isStart = scene.id === project.startId;
+      const isSelected = scene.id === selectedSceneId;
+      ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+      ctx.strokeStyle = isSelected ? varAccent() : isStart ? "#38bdf8" : "rgba(148, 163, 184, 0.5)";
+      ctx.lineWidth = isSelected ? 3 : 2;
+      roundedRect(ctx, x, y, scene.w, scene.h, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "bold 14px 'Segoe UI', sans-serif";
+      ctx.textBaseline = "top";
+      ctx.fillText(scene.title || "(Névtelen)", x + 12, y + 12);
+
+      drawChip(x + 12, y + 38, scene.label || "NINCS CÍMKE");
+
+      ctx.fillStyle = "rgba(226, 232, 240, 0.85)";
+      ctx.font = "12px 'Segoe UI', sans-serif";
+      const text = (scene.text || "").split(/\n/).slice(0, 4).join(" ");
+      const truncated = text.length > 120 ? text.slice(0, 117) + "…" : text;
+      wrapText(ctx, truncated, x + 12, y + 66, scene.w - 24, 16);
+      ctx.restore();
+    }
+
+    function drawChip(x, y, label) {
+      ctx.save();
+      const paddingX = 8;
+      const paddingY = 4;
+      ctx.font = "bold 10px 'Segoe UI', sans-serif";
+      const textWidth = ctx.measureText(label).width;
+      const width = textWidth + paddingX * 2;
+      const height = 20;
+      ctx.fillStyle = "rgba(254, 230, 0, 0.15)";
+      ctx.strokeStyle = varAccent();
+      ctx.lineWidth = 1.2;
+      roundedRect(ctx, x, y, width, height, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = varAccent();
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      ctx.fillText(label, x + paddingX, y + height / 2);
+      ctx.restore();
+    }
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(" ");
+      let line = "";
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + " ";
+        const metrics = context.measureText(testLine);
+        if (metrics.width > maxWidth && i > 0) {
+          context.fillText(line, x, y);
+          line = words[i] + " ";
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line, x, y);
+    }
+
+    function roundedRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function varAccent() {
+      return getComputedStyle(document.documentElement).getPropertyValue("--accent");
+    }
+
+    function setupCanvasInteractions() {
+      elements.mapCanvas.addEventListener("mousedown", (event) => {
+        const button = event.button;
+        if (button === 1 || button === 2) {
+          canvasState.isPanning = true;
+          canvasState.panStart = { x: event.clientX, y: event.clientY };
+          elements.mapCanvas.classList.add("dragging");
+          return;
+        }
+        if (button !== 0) return;
+        const { x, y } = screenToWorld(event.offsetX, event.offsetY);
+        const scene = hitTestScene(x, y);
+        if (scene) {
+          canvasState.draggingNodeId = scene.id;
+          canvasState.dragStart = { x: x - scene.x, y: y - scene.y };
+          selectScene(scene.id);
+        } else {
+          selectScene(null);
+        }
+      });
+
+      window.addEventListener("mousemove", (event) => {
+        if (canvasState.isPanning && canvasState.panStart) {
+          const dx = event.clientX - canvasState.panStart.x;
+          const dy = event.clientY - canvasState.panStart.y;
+          canvasState.panStart = { x: event.clientX, y: event.clientY };
+          canvasState.offsetX += dx;
+          canvasState.offsetY += dy;
+          renderCanvas();
+          return;
+        }
+        if (canvasState.draggingNodeId) {
+          const rect = elements.mapCanvas.getBoundingClientRect();
+          const { x, y } = screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
+          const scene = project.scenes[canvasState.draggingNodeId];
+          if (!scene) return;
+          scene.x = x - canvasState.dragStart.x;
+          scene.y = y - canvasState.dragStart.y;
+          saveProject();
+          renderCanvas();
+        }
+      });
+
+      window.addEventListener("mouseup", () => {
+        canvasState.isPanning = false;
+        canvasState.draggingNodeId = null;
+        elements.mapCanvas.classList.remove("dragging");
+      });
+
+      elements.mapCanvas.addEventListener(
+        "wheel",
+        (event) => {
+          event.preventDefault();
+          const { offsetX, offsetY, deltaY } = event;
+          const scaleFactor = deltaY > 0 ? 0.9 : 1.1;
+          const newScale = clamp(canvasState.scale * scaleFactor, 0.35, 3.5);
+          const worldPoint = screenToWorld(offsetX, offsetY);
+          canvasState.scale = newScale;
+          const newScreenPoint = worldToScreen(worldPoint.x, worldPoint.y);
+          canvasState.offsetX += offsetX - newScreenPoint.x;
+          canvasState.offsetY += offsetY - newScreenPoint.y;
+          renderCanvas();
+        },
+        { passive: false }
+      );
+
+      elements.mapCanvas.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+      });
+    }
+
+    function screenToWorld(x, y) {
+      const dpr = window.devicePixelRatio || 1;
+      return {
+        x: (x * dpr - canvasState.offsetX * dpr) / (canvasState.scale * dpr),
+        y: (y * dpr - canvasState.offsetY * dpr) / (canvasState.scale * dpr),
+      };
+    }
+
+    function worldToScreen(x, y) {
+      const dpr = window.devicePixelRatio || 1;
+      return {
+        x: x * canvasState.scale + canvasState.offsetX,
+        y: y * canvasState.scale + canvasState.offsetY,
+      };
+    }
+
+    function hitTestScene(x, y) {
+      const scenes = getScenesArray().slice().reverse();
+      return scenes.find((scene) => x >= scene.x && x <= scene.x + scene.w && y >= scene.y && y <= scene.y + scene.h) || null;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function renderAll() {
+      renderSceneList();
+      renderEditor();
+      renderPlayer();
+      renderDiagnostics();
+      renderCanvas();
+    }
+
+    function init() {
+      if (!selectedSceneId) {
+        selectedSceneId = getScenesArray()[0]?.id || null;
+      }
+      setupCanvasInteractions();
+      window.addEventListener("resize", () => {
+        renderCanvas();
+      });
+      renderAll();
+      if (project.startId) {
+        playingSceneId = project.startId;
+        renderPlayer();
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
